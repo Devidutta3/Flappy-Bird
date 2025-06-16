@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Flappy Bird</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #70c5ce; overflow: hidden; font-family: sans-serif; }
+    canvas { display: block; margin: 0 auto; background: #70c5ce; border: 2px solid #000; }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="320" height="480"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let frames = 0;
+    const DEGREE = Math.PI / 180;
+
+    const sprite = new Image();
+    sprite.src = "https://openai-craft-assets.s3.amazonaws.com/flappy-bird-sprite.png";
+
+    const bird = {
+      x: 50,
+      y: 150,
+      w: 34,
+      h: 26,
+      radius: 12,
+      gravity: 0.25,
+      jump: 4.6,
+      speed: 0,
+      rotation: 0,
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.drawImage(sprite, 276, 112, this.w, this.h, -this.w / 2, -this.h / 2, this.w, this.h);
+        ctx.restore();
+      },
+
+      flap() {
+        this.speed = -this.jump;
+      },
+
+      update() {
+        this.speed += this.gravity;
+        this.y += this.speed;
+
+        if (this.y + this.h / 2 >= canvas.height) {
+          this.y = canvas.height - this.h / 2;
+          this.speed = 0;
+        }
+
+        if (this.speed >= this.jump) {
+          this.rotation = 90 * DEGREE;
+        } else {
+          this.rotation = -25 * DEGREE;
+        }
+      }
+    };
+
+    const pipes = {
+      position: [],
+      w: 53,
+      h: 400,
+      gap: 100,
+      maxYPos: -150,
+      dx: 2,
+
+      draw() {
+        for (let i = 0; i < this.position.length; i++) {
+          let p = this.position[i];
+          ctx.drawImage(sprite, 553, 0, this.w, this.h, p.x, p.y, this.w, this.h);
+          ctx.drawImage(sprite, 502, 0, this.w, this.h, p.x, p.y + this.h + this.gap, this.w, this.h);
+        }
+      },
+
+      update() {
+        if (frames % 100 === 0) {
+          this.position.push({
+            x: canvas.width,
+            y: this.maxYPos * (Math.random() + 1)
+          });
+        }
+
+        for (let i = 0; i < this.position.length; i++) {
+          let p = this.position[i];
+          p.x -= this.dx;
+
+          // remove pipes off screen
+          if (p.x + this.w <= 0) {
+            this.position.shift();
+          }
+        }
+      }
+    };
+
+    function draw() {
+      ctx.fillStyle = "#70c5ce";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      pipes.draw();
+      bird.draw();
+    }
+
+    function update() {
+      bird.update();
+      pipes.update();
+    }
+
+    function loop() {
+      update();
+      draw();
+      frames++;
+      requestAnimationFrame(loop);
+    }
+
+    canvas.addEventListener("click", () => {
+      bird.flap();
+    });
+
+    loop();
+  </script>
+</body>
+</html>
